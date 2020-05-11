@@ -1,7 +1,7 @@
 <template>
-    <div class="h-full">
+    <div class="h-full bg-blue-100">
         <header class="bg-blue-700 border-b-2 border-blue-900">
-            <div class="text-4xl container mx-auto px-2 py-2 text-white"> 1001 assignment 2 code</div>
+            <div class="text-4xl container mx-auto px-2 py-2 text-white"> G405 1001 assignment 2 code</div>
         </header>
         <div class="bg-blue-100 h-full">
             <div class="text-2xl font-bold container mx-auto py-5"> Min area values calculator</div>
@@ -74,13 +74,15 @@
                     <h2 class="text-xl font-medium"> I value </h2>
                     <div class="flex-row">
                         <div class="flex-col flex">
-                            <span> yc(mm) = {{yc}}</span>
+                            <span> yc(mm) = {{calculateValues[0]}}</span>
                             <span> I(mm) = {{iValue}}</span>
+                            <span> Area(mm^2) = {{calculateValues[1]}}</span>
                         </div>
                         <table class="table-auto table">
                             <tr v-for="(item, key) in shapeArr" :key="key">
                                 <td v-for="(dict, key2) in item" :key="key2" class="border-2 bg-white">
-                                    {{key2}}: {{dict}}
+                                    <div v-if="key2==='type'" class="pr-2"> {{key2}}: {{dict}}</div>
+                                     <label v-else for="tValue" class="pr">{{key2}}:  <input id="tValue" v-model="shapeArr[key][key2]" type="number" step="0.01" class="bg-gray-200 rounded w-20 px-2" ></label>
                                 </td>
                             </tr>
                         </table>
@@ -136,6 +138,7 @@
                 bottomDist: null,
                 radius: undefined,
                 yc: 0,
+                areaSum: 0,
             }
         },
         methods: {
@@ -170,35 +173,46 @@
                 this.dValue = null;
             }
         },
+
+        updateValues(yc, area) {
+            this.yc = yc;
+            this.area = area;
+        },
+
         created() {
             let material = new Material('al 1050', 350, 70);
             this.currentMaterials.push(material.toLst())
         },
 
-        watch: {
-            shapeArr: function (){
-                let shiftArea = 0;
-                let areaSum = 0;
-                for (let item in this.shapeArr){
-                    let shape = this.shapeArr[item];
-                    if (shape['type'] === 'circle') {
-                        let area = Math.pow(shape['radius'],2)*Math.PI;
-                        areaSum += area;
-                        shiftArea += area*shape['bottomDist'];
-                    }
-                    else if(shape['type'] === 'square') {
-                        let area = shape['bValue']*shape['dValue'];
-                        areaSum += area;
-                        shiftArea += area*shape['bottomDist'];
-                    }
-                }
-                let yc = (shiftArea/areaSum).toFixed(2);
-                this.yc = yc;
-                return yc
-            },
-        },
 
         computed: {
+            calculateValues: {
+                get: function() {
+                    let shiftArea = 0;
+                    let areaSum = 0;
+                    for (let item in this.shapeArr){
+                        let shape = this.shapeArr[item];
+                        if (shape['type'] === 'circle') {
+                            let area = Math.pow(shape['radius'],2)*Math.PI;
+                            areaSum += area;
+                            shiftArea += area*shape['bottomDist'];
+                        }
+                        else if(shape['type'] === 'square') {
+                            let area = shape['bValue']*shape['dValue'];
+                            areaSum += area;
+                            shiftArea += area*shape['bottomDist'];
+                        }
+                    }
+                    let yc = (shiftArea/areaSum).toFixed(2);
+                    return [yc, areaSum]
+                },
+
+                set: function(input) {
+                        this.yc = input[0];
+                        this.areaSum = input[1];
+
+            }},
+
             iValue: function () {
                 let yc = this.yc;
                 let ixx = 0;
@@ -212,13 +226,12 @@
                     }
                     if(shape['type'] === 'square') {
                         area = shape['bValue']*shape['dValue'];
-                        izz = Math.pow(shape['dValue'],3)*shape['bValue']
+                        izz = Math.pow(shape['dValue'],3)*shape['bValue']/12
                     }
                     let shiftxsqrd = Math.pow((shape['bottomDist']- yc),2);
                     ixx += izz + area*shiftxsqrd
                 }
-
-                return ixx.toFixed()
+                return `${(ixx/1000000).toFixed(3)}*10^6`
             }
         }
     }
